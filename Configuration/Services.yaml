@@ -1,0 +1,35 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  cache.backend:
+    class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+    factory: ['@TYPO3\CMS\Core\Cache\CacheManager', 'getCache']
+    arguments: ['backend']
+
+  TYPO3\CMS\Backend\Security\AccessControl\:
+    resource: '../Classes/Security/AccessControl/*'
+
+  TYPO3\CMS\Backend\Security\AccessControl\Principal\PrincipalAttributeProvider:
+    arguments:
+      - '@cache.runtime'
+    tags:
+      -
+        name: event.listener
+        identifier: 'backend-principal-provider'
+        event: TYPO3\CMS\Security\AccessControl\Event\SubjectRetrivalEvent
+  TYPO3\CMS\Backend\Security\AccessControl\Permission\PermissionAttributeProvider:
+    arguments:
+      - '@cache.runtime'
+    tags:
+      -
+        name: event.listener
+        identifier: 'backend-resource-provider'
+        event: TYPO3\CMS\Security\AccessControl\Event\AttributeRetrivalEvent
+
+  TYPO3\CMS\Backend\Security\AccessControl\Permission\PermissionConfigurationLoader:
+    public: true
+    arguments:
+      - '@cache.backend'
