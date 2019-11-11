@@ -24,20 +24,10 @@ use TYPO3\CMS\Security\AccessControl\Attribute\PrincipalAttribute;
 class RoleAttribute extends PrincipalAttribute
 {
     /**
-     * @var string
+     * @inheritdoc
      */
-    public $name;
-
-    /**
-     * Creates a backend role principal attribute.
-     *
-     * @param int $uid Unique identifier
-     * @param string $name User name
-     */
-    public function __construct(string $name)
+    public function __construct(string $identifier)
     {
-        parent::__construct($name);
-
-        $this->name = $name;
+        parent::__construct($identifier);
     }
 }

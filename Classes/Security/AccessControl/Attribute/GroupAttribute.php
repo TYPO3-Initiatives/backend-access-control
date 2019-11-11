@@ -24,26 +24,10 @@ use TYPO3\CMS\Security\AccessControl\Attribute\PrincipalAttribute;
 class GroupAttribute extends PrincipalAttribute
 {
     /**
-     * @var string
+     * @inheritdoc
      */
-    public $name;
-
-    /**
-     * @var int
-     */
-    public $uid;
-
-    /**
-     * Creates a group principal attribute.
-     *
-     * @param int $uid Unique identifier
-     * @param string $name Group name
-     */
-    public function __construct(int $uid, string $name)
+    public function __construct(string $identifier)
     {
-        parent::__construct((string) $uid);
-
-        $this->uid = $uid;
-        $this->name = $name;
+        parent::__construct($identifier);
     }
 }

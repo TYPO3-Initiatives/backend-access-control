@@ -35,26 +35,6 @@ final class PermissionAttribute extends AbstractAttribute
     const STATE_DENY = 'deny';
 
     /**
-     * @var string
-     */
-    public $action;
-
-    /**
-     * @var PrincipalAttribute
-     */
-    public $principal;
-
-    /**
-     * @var string
-     */
-    public $resource;
-
-    /**
-     * @var string
-     */
-    public $state;
-
-    /**
      * Creates a backend permission attribute.
      *
      * @param PrincipalAttribute $principal Principal
@@ -64,9 +44,29 @@ final class PermissionAttribute extends AbstractAttribute
      */
     public function __construct(PrincipalAttribute $principal, string $resource, string $action, string $state)
     {
-        $this->action = $action;
-        $this->principal = $principal;
-        $this->resource = $resource;
-        $this->state = $state;
+        $this->meta['action'] = $action;
+        $this->meta['principal'] = $principal;
+        $this->meta['resource'] = $resource;
+        $this->meta['state'] = $state;
+    }
+
+    public function getAction(): string
+    {
+        return $this->meta['action'];
+    }
+
+    public function getResource(): string
+    {
+        return $this->meta['resource'];
+    }
+
+    public function getState(): string
+    {
+        return $this->meta['state'];
+    }
+
+    public function getPrincipal(): PrincipalAttribute
+    {
+        return $this->meta['principal'];
     }
 }

@@ -40,12 +40,12 @@ class ResourceFunctionsProvider implements ExpressionFunctionProviderInterface
             },
             function ($variables, ...$arguments) {
                 if (count($arguments) === 4) {
-                    foreach ($variables['resource']->permissions as $permission) {
+                    foreach ($variables['resource']->getPermissions() as $permission) {
                         if (
-                            $permission->principal->class === $arguments[0]
-                            && $permission->resource === $arguments[1]
-                            && $permission->action === $arguments[2]
-                            && $permission->state === $arguments[3]
+                            $permission->getPrincipal()->getNamespace() === $arguments[0]
+                            && $permission->getResource() === $arguments[1]
+                            && $permission->getAction() === $arguments[2]
+                            && $permission->getState() === $arguments[3]
                         ) {
                             return true;
                         }

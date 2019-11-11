@@ -26,7 +26,7 @@ use TYPO3\CMS\Security\AccessControl\Event\SubjectRetrivalEvent;
 
 /**
  * @internal
- * * @todo Fetch system maintainer role using context.
+ * @todo Fetch system maintainer role using context.
  */
 class PrincipalAttributeProvider
 {
@@ -49,72 +49,32 @@ class PrincipalAttributeProvider
             return;
         }
 
-        $subject = $event->getSubject();
         $userAspect = $event->getContext()->getAspect('backend.user');
         $cacheIdentifier = sha1(static::class . '_user_' . $userAspect->get('id'));
+        $principalAttributes = $this->cache->get($cacheIdentifier);
 
-        if (($entry = $this->cache->get($cacheIdentifier)) === false) {
-            $entry = [];
+        if ($principalAttributes === false) {
+            $principalAttributes = [];
 
-            $entry[] = new UserAttribute(
-                $userAspect->get('id'),
-                $userAspect->get('username')
-            );
+            $principalAttributes[] = new UserAttribute((string) $userAspect->get('id'));
     
             foreach ($userAspect->get('groupIds') as $groupId) {
-                $entry[] = new GroupAttribute($groupId, $this->getGroupTitle($groupId));
+                $principalAttributes[] = new GroupAttribute((string) $groupId);
             }
     
             if ($userAspect->get('isAdmin')) {
-                $entry[] = new RoleAttribute('administrator');
+                $principalAttributes[] = new RoleAttribute('administrator');
             }
 
             /*if ($userAspect->get('isSystemMaintainer')) {
                 $subject->principals[] = new RolePrincipalAttribute('system-maintainer');
             }*/
             
-            $this->cache->set($cacheIdentifier, $entry);
+            $this->cache->set($cacheIdentifier, $principalAttributes);
         }
 
-        $subject->principals = array_merge($subject->principals, $entry);
-    }
-
-    protected function getGroupTitle(int $groupId): string
-    {
-        $cacheIdentifier = sha1(static::class . '_group_titles');
-
-        if (($entry = $this->cache->get($cacheIdentifier)) === false) {
-            $entry = [];
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('be_groups');
-            $expressionBuilder = $queryBuilder->expr();
-            $ressource = $queryBuilder->select(
-                    'uid',
-                    'title'
-                )
-                ->from('be_groups')
-                ->where($expressionBuilder->andX(
-                    $expressionBuilder->eq(
-                        'pid',
-                        $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
-                    ),
-                    $expressionBuilder->orX(
-                        $expressionBuilder->eq('lockToDomain', $queryBuilder->quote('')),
-                        $expressionBuilder->isNull('lockToDomain'),
-                        $expressionBuilder->eq(
-                            'lockToDomain',
-                            $queryBuilder->createNamedParameter(GeneralUtility::getIndpEnv('HTTP_HOST'), \PDO::PARAM_STR)
-                        )
-                    )
-                ))
-                ->execute();
-
-            while ($row = $ressource->fetch(\PDO::FETCH_ASSOC)) {
-                $entry[$row['uid']] = $row['title'];
-            }
-
-            $this->cache->set($cacheIdentifier, $entry);
+        foreach ($principalAttributes as $principalAttribute) {
+            $event->addPrincipal($principalAttribute);
         }
-
-        return $entry[(string) $groupId] ?? '';
     }
 }

@@ -24,7 +24,7 @@ use TYPO3\CMS\Core\ExpressionLanguage\AbstractProvider;
  */
 class ResourceProvider extends AbstractProvider
 {
-    public function __construct(Context $context = null)
+    public function __construct()
     {
         $this->expressionLanguageProviders = [
             ResourceFunctionsProvider::class,

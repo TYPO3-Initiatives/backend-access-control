@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Security\AccessControl\Event\AttributeRetrivalEvent;
+use TYPO3\CMS\Security\AccessControl\Utility\PrincipalUtility;
 
 /**
  * @internal
@@ -58,35 +59,59 @@ class PermissionAttributeProvider
             return;
         }
 
-        if (!$event->getContext()->getAspect('backend.user')->get('isLoggedIn')) {
+        $userAttributes = PrincipalUtility::filterList(
+            $event->getSubject()->getPrincipals(), 
+            static function ($principal) {
+                return $principal instanceof UserAttribute;
+            }
+        );
+
+        $groupAttributes = PrincipalUtility::filterList(
+            $event->getSubject()->getPrincipals(), 
+            static function ($principal) {
+                return $principal instanceof GroupAttribute;
+            }
+        );
+
+        if (count($userAttributes) === 0 && count($groupAttributes) === 0) {
             return;
         }
 
-        $attribute = $event->getAttribute();
-        $userAspect = $event->getContext()->getAspect('backend.user');
-        $cacheIdentifier = sha1(static::class . '_user_' . $userAspect->get('id'));
+        ksort($userAttributes);
+        ksort($groupAttributes);
 
-        if (($entry = $this->cache->get($cacheIdentifier)) === false) {
-            $resources = array_merge(
-                $this->permissionsConfiguration[$attribute->class]['dependencies'] ?? [],
-                [$attribute->class]
+        $cacheIdentifier = sha1(
+            static::class . '_permissions_'
+            . implode('_', array_keys($userAttributes))
+            . implode('_', array_keys($groupAttributes))
+        );
+
+        $resourceAttribute = $event->getAttribute();
+        $permissionAttributes = $this->cache->get($cacheIdentifier);
+
+        if ($permissionAttributes === false) {
+            $resourceNamespaces = array_merge(
+                $this->permissionsConfiguration[$resourceAttribute->getNamespace()]['dependencies'] ?? [],
+                [$resourceAttribute->getNamespace()]
             );
-            $entry = [];
+            $permissionAttributes = [];
 
-            foreach ($resources as $resource) {
-                foreach ($this->getUserPermissions($userAspect->get('id'), $resource) as $permission) {
-                    $entry[] = new PermissionAttribute(
-                        new UserAttribute($userAspect->get('id'), $userAspect->get('username')),
-                        $resource,
-                        $permission['action'],
-                        $permission['state']
-                    );
+            foreach ($resourceNamespaces as $resourceNamespace) {
+                foreach ($userAttributes as $userAttribute) {
+                    foreach ($this->getUserPermissions($userAttribute->getIdentifier(), $resourceNamespace) as $permission) {
+                        $permissionAttributes[] = new PermissionAttribute(
+                            $userAttribute,
+                            $resourceNamespace,
+                            $permission['action'],
+                            $permission['state']
+                        );
+                    }
                 }
-                foreach ($userAspect->get('groupIds') as $groupId) {
-                    foreach ($this->getGroupPermissions($groupId, $resource) as $permission) {
-                        $entry[] = new PermissionAttribute(
-                            new GroupAttribute($groupId, $this->getGroupTitle($groupId)),
-                            $resource,
+                foreach ($groupAttributes as $groupAttribute) {
+                    foreach ($this->getGroupPermissions($groupAttribute->getIdentifier(), $resourceNamespace) as $permission) {
+                        $permissionAttributes[] = new PermissionAttribute(
+                            $groupAttribute,
+                            $resourceNamespace,
                             $permission['action'],
                             $permission['state']
                         );
@@ -94,13 +119,15 @@ class PermissionAttributeProvider
                 }
             }
 
-            $this->cache->set($cacheIdentifier, $entry);
+            $this->cache->set($cacheIdentifier, $permissionAttributes);
         }
 
-        $attribute->permissions = array_merge($attribute->permissions, $entry);
+        foreach ($permissionAttributes as $permissionAttribute) {
+            $resourceAttribute->addPermission($permissionAttribute);
+        }
     }
 
-    protected function getGroupPermissions(int $groupId, string $resource): array
+    protected function getGroupPermissions(string $groupIdentifier, string $resource): array
     {
         $cacheIdentifier = sha1(static::class . '_group_permissions');
 
@@ -136,10 +163,10 @@ class PermissionAttributeProvider
             $this->cache->set($cacheIdentifier, $entry);
         }
 
-        return $entry[(string) $groupId][$resource] ?? [];
+        return $entry[$groupIdentifier][$resource] ?? [];
     }
 
-    protected function getUserPermissions(int $userId, string $resource): array
+    protected function getUserPermissions(string $userIdentifier, string $resource): array
     {
         $cacheIdentifier = sha1(static::class . '_user_permissions');
 
@@ -165,45 +192,6 @@ class PermissionAttributeProvider
             $this->cache->set($cacheIdentifier, $entry);
         }
 
-        return $entry[(string) $userId][$resource] ?? [];
-    }
-
-    protected function getGroupTitle(int $groupId): string
-    {
-        $cacheIdentifier = sha1(static::class . '_group_titles');
-
-        if (($entry = $this->cache->get($cacheIdentifier)) === false) {
-            $entry = [];
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('be_groups');
-            $expressionBuilder = $queryBuilder->expr();
-            $ressource = $queryBuilder->select(
-                    'uid',
-                    'title'
-                )
-                ->from('be_groups')
-                ->where($expressionBuilder->andX(
-                    $expressionBuilder->eq(
-                        'pid',
-                        $queryBuilder->createNamedParameter(0, \PDO::PARAM_INT)
-                    ),
-                    $expressionBuilder->orX(
-                        $expressionBuilder->eq('lockToDomain', $queryBuilder->quote('')),
-                        $expressionBuilder->isNull('lockToDomain'),
-                        $expressionBuilder->eq(
-                            'lockToDomain',
-                            $queryBuilder->createNamedParameter(GeneralUtility::getIndpEnv('HTTP_HOST'), \PDO::PARAM_STR)
-                        )
-                    )
-                ))
-                ->execute();
-
-            while ($row = $ressource->fetch(\PDO::FETCH_ASSOC)) {
-                $entry[$row['uid']] = $row['title'];
-            }
-
-            $this->cache->set($cacheIdentifier, $entry);
-        }
-
-        return $entry[(string) $groupId] ?? '';
+        return $entry[$userIdentifier][$resource] ?? [];
     }
 }

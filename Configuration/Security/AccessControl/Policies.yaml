@@ -4,7 +4,7 @@ TYPO3:
       policies:
         Backend:
           description: Backend policy set.
-          target: '"cms:backend:resource" in resource.classes'
+          target: '"cms:backend:resource" in resource.namespaces'
           algorithm: highestPriority
           priority: 100
           policies:
@@ -27,18 +27,18 @@ TYPO3:
                   priority: 10
                   rules:
                     - 
-                      target: 'hasPermission("cms:backend:user", resource.identifier, action.class, "deny")'
+                      target: 'hasPermission("cms:backend:user", resource.name, action.name, "deny")'
                       effect: deny
                     -
-                      target: 'hasPermission("cms:backend:user", resource.identifier, action.class, "permit")'
+                      target: 'hasPermission("cms:backend:user", resource.name, action.name, "permit")'
                       effect: permit
                 Group:
                   description: Secondary principal policy.
                   algorithm: denyOverrides
                   rules:
                     -
-                      target: 'hasPermission("cms:backend:group", resource.identifier, action.class, "deny")'
+                      target: 'hasPermission("cms:backend:group", resource.name, action.name, "deny")'
                       effect: deny
                     -
-                      target: 'hasPermission("cms:backend:group", resource.identifier, action.class, "permit")'
+                      target: 'hasPermission("cms:backend:group", resource.name, action.name, "permit")'
                       effect: permit

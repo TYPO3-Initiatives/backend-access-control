@@ -19,22 +19,25 @@ namespace TYPO3\CMS\Backend\Security\AccessControl\Attribute;
 /**
  * @api
  */
-class ResourceAttribute extends \TYPO3\CMS\Security\Attribute\ResourceAttribute
+class ResourceAttribute extends \TYPO3\CMS\Security\AccessControl\Attribute\ResourceAttribute
 {
     /**
-     * @var array
-     */
-    public $permissions;
-
-    /**
-     * Creates a backend resource attribute.
-     *
-     * @param string $identifier Resource identifier
+     * @inheritdoc
      */
     public function __construct(string $identifier)
     {
         parent::__construct($identifier);
 
-        $this->permissions = [];
+        $this->meta['permissions'] = [];
+    }
+
+    public function getPermissions(): array
+    {
+        return $this->meta['permissions'];
+    }
+
+    public function addPermission(PermissionAttribute $permission): void
+    {
+        $this->meta['permissions'][] = $permission;
     }
 }
