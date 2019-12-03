@@ -20,9 +20,10 @@ use TYPO3\CMS\Backend\Security\AccessControl\Attribute\GroupAttribute;
 use TYPO3\CMS\Backend\Security\AccessControl\Attribute\RoleAttribute;
 use TYPO3\CMS\Backend\Security\AccessControl\Attribute\UserAttribute;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Security\AccessControl\Event\SubjectRetrivalEvent;
+use TYPO3\AccessControl\Event\SubjectRetrievalEvent;
 
 /**
  * @internal
@@ -43,13 +44,13 @@ class PrincipalAttributeProvider
     /**
      * @inheritdoc
      */
-    public function __invoke(SubjectRetrivalEvent $event): void
+    public function __invoke(SubjectRetrievalEvent $event): void
     {
-        if (!$event->getContext()->getAspect('backend.user')->get('isLoggedIn')) {
+        if (!$event->getContext()->hasEntry(Context::class)) {
             return;
         }
 
-        $userAspect = $event->getContext()->getAspect('backend.user');
+        $userAspect = $event->getContext()->getEntry(Context::class)->getAspect('backend.user');
         $cacheIdentifier = sha1(static::class . '_user_' . $userAspect->get('id'));
         $principalAttributes = $this->cache->get($cacheIdentifier);
 

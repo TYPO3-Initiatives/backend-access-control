@@ -19,7 +19,8 @@ services:
       -
         name: event.listener
         identifier: 'backend-principal-provider'
-        event: TYPO3\CMS\Security\AccessControl\Event\SubjectRetrivalEvent
+        event: TYPO3\AccessControl\Event\SubjectRetrievalEvent
+
   TYPO3\CMS\Backend\Security\AccessControl\Permission\PermissionAttributeProvider:
     arguments:
       - '@cache.runtime'
@@ -27,7 +28,7 @@ services:
       -
         name: event.listener
         identifier: 'backend-resource-provider'
-        event: TYPO3\CMS\Security\AccessControl\Event\AttributeRetrivalEvent
+        event: TYPO3\AccessControl\Event\AttributeRetrievalEvent
 
   TYPO3\CMS\Backend\Security\AccessControl\Permission\PermissionConfigurationLoader:
     public: true

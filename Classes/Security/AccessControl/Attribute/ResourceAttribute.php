@@ -19,7 +19,7 @@ namespace TYPO3\CMS\Backend\Security\AccessControl\Attribute;
 /**
  * @api
  */
-class ResourceAttribute extends \TYPO3\CMS\Security\AccessControl\Attribute\ResourceAttribute
+class ResourceAttribute extends \TYPO3\AccessControl\Attribute\ResourceAttribute
 {
     /**
      * @inheritdoc

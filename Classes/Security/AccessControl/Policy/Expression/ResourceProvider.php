@@ -1,7 +1,7 @@
 <?php
 declare(strict_types = 1);
 
-namespace TYPO3\CMS\Backend\Security\AccessControl\Policy\ExpressionLanguage;
+namespace TYPO3\CMS\Backend\Security\AccessControl\Policy\Expression;
 
 /*
  * This file is part of the TYPO3 CMS project.

@@ -16,8 +16,8 @@ namespace TYPO3\CMS\Backend\Security\AccessControl\Attribute;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Security\AccessControl\Attribute\AbstractAttribute;
-use TYPO3\CMS\Security\AccessControl\Attribute\PrincipalAttribute;
+use TYPO3\AccessControl\Attribute\AbstractAttribute;
+use TYPO3\AccessControl\Attribute\PrincipalAttribute;
 
 /**
  * @api
